@@ -25,19 +25,19 @@ from tools.misc import DEFAULT_SERVER_DATE_FORMAT
 
 from . orm import Searcher
 
-def get_user_lang(cursor, user_id, context=None):
+def get_partner_lang(cursor, user_id, partner, context=None):
 
     """
-    Returns the date format used by the user language.
+    Returns the res.lang object associated to the specified partner (id or browse result).
     """
 
-    user_pool = pooler.get_pool(cursor.dbname).get('res.users')
-    user = user_pool.browse(cursor, user_id, user_id)
+    if isinstance(partner, int):
+        partner_pool = pooler.get_pool(cursor.dbname).get('res.partner')
+        partner = partner_pool.browse(cursor, user_id, partner_id)
+        if not partner:
+            raise osv.except_osv(_('Error'), _("Can't find a partner corresponding to ID %d." % partner_id))
 
-    if not user:
-        raise osv.except_osv(_('Error'), _("Can't find a user corresponding to ID %d." % user_id))
-
-    search = Searcher(cursor, user_id, 'res.lang', context=context, code=user.context_lang)
+    search = Searcher(cursor, user_id, 'res.lang', context=context, code=partner.lang)
 
     return search.browse_one()
 
