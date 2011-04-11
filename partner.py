@@ -33,6 +33,7 @@ def get_partner_lang(cursor, user_id, partner, context=None):
 
     if isinstance(partner, int):
         partner_pool = pooler.get_pool(cursor.dbname).get('res.partner')
+        partner_id = partner
         partner = partner_pool.browse(cursor, user_id, partner_id)
         if not partner:
             raise osv.except_osv(_('Error'), _("Can't find a partner corresponding to ID %d." % partner_id))
