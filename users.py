@@ -17,5 +17,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import users
-import orm
+import pooler
+
+from osv import osv, fields
+from tools.translate import _
+from tools.misc import DEFAULT_SERVER_DATE_FORMAT
+
+from . orm import Searcher
+
+def get_user_lang(cursor, user_id, context=None):
+
+    """
+    Returns the date format used by the user language.
+    """
+
+    user_pool = pooler.get_pool(cursor.dbname).get('res.users')
+    user = user_pool.browse(cursor, user_id, user_id)
+
+    if not user:
+        raise osv.except_osv(_('Error'), _("Can't find a user corresponding to ID %d." % user_id))
+
+    search = Searcher(cursor, user_id, 'res.lang', context=context, code=user.context_lang)
+
+    return search.browse_one()
+

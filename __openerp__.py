@@ -17,5 +17,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import users
-import orm
+{
+    "name": "An OpenSource Library for OpenERP developpement",
+    "version": "0.1",
+    "author": "UIDE/WE2BS",
+    "category": "Developpement/Library",
+    "website": "http://www.we2bs.com",
+    "description":
+    """
+    An OpenSource Library for OpenERP 6.
+    """,
+    "depends": ["base"],
+    "init_xml": [],
+    "demo_xml": [],
+    "update_xml": [],
+    "active": False,
+    "test": [],
+    "installable": True,
+}
