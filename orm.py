@@ -19,13 +19,14 @@
 
 import pooler
 import osv
+import logging
 
 class Searcher(object):
 
     _last_search_pattern = None
-    _last_search_ids = None
+    _last_search_ids = []
 
-    def __init__(self, cursor, user_id, obj=None, context=None, **kwargs):
+    def __init__(self, cursor, user_id, obj, context=None, **kwargs):
 
         """
         Constructs a search object call search if obj is specified.
@@ -33,17 +34,26 @@ class Searcher(object):
 
         self._cursor = cursor
         self._user_id = user_id
+        self._obj = obj
 
         if obj:
-            self.search(obj, context, **kwargs)
+            self.search(context, **kwargs)
 
-    def search(self, obj, context=None, **kwargs):
+    def __len__(self):
+
+        """
+        Returns the len of the last result returned by search().
+        """
+        
+        return len(self._last_search_ids)
+
+    def search(self, context=None, **kwargs):
 
         """
         Search objects of type "obj" based on the keywords attributes. 
         """
 
-        obj_pool = pooler.get_pool(self._cursor.dbname).get(obj)
+        obj_pool = pooler.get_pool(self._cursor.dbname).get(self._obj)
         obj_search_pattern = []
 
         if not obj_pool:
@@ -59,8 +69,32 @@ class Searcher(object):
 
             if lookup == 'exact':
                 obj_search_pattern.append((field, '=', keyword_value))
-            elif lookup == 'iexact':
+            elif lookup == 'iexact' or lookup == 'ilike':
                 obj_search_pattern.append((field, 'ILIKE', keyword_value))
+            elif lookup == 'xmlid':
+                # This option improve the basic search method, and allow searching by XMLID
+                # for related field. 'partner_id__xmlid' will be replaced by 'partner_id.id'
+                # with the ID corresponding to the XML ID.
+                module = False
+                xmlid = keyword_value
+                keyword_value_splitted = keyword_value.split('.')
+                if len(keyword_value_splitted) > 1:
+                    module = keyword_value_splitted[0]
+                    xmlid = '.'.join(keyword_value_splitted[1:])
+                search_data = Searcher(self._cursor, self._user_id, 'ir.model.data')
+                if module:
+                    result = search_data.search(module=module, name=xmlid).browse_one()
+                else:
+                    result = search_data.search(name=xmlid)
+                    if len(result) > 1:
+                        logging.warning('An XMLID search returned more than one result: %s' % xmlid)
+                        logging.warning('Only the first one has been returned, please specify a module.')
+                    result = result.browse_one()
+                if result:
+                    obj_search_pattern.append((field + '.id', '=', int(result.res_id)))
+                else:
+                    # We didn't find a corresponding XMLID in the DB.
+                    raise ValueError("The XMLID '%s' doesn't exists." % xmlid)
 
         self._last_search_ids = obj_pool.search(self._cursor, self._user_id, obj_search_pattern, context=context)
         self._last_search_obj_pool = obj_pool
@@ -84,7 +118,7 @@ class Searcher(object):
     def browse_one(self, context=None):
 
         """
-        Returns the first elements contained in the result, or None.     
+        Returns the first element contained in the result, or None.
         """
 
         if not self._last_search_ids:
@@ -94,3 +128,7 @@ class Searcher(object):
         result = self._last_search_obj_pool.browse(
             self._cursor, self._user_id, self._last_search_ids[0], context=context)
         return result or None
+
+    @property
+    def ids(self):
+        return self._last_search_ids
