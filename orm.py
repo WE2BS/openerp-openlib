@@ -21,6 +21,8 @@ import pooler
 import osv
 import logging
 
+LOOKUPS_METHOD = ('exact', 'iexact', 'like', 'ilike', 'xmlid')
+
 class Searcher(object):
 
     _last_search_pattern = None
@@ -61,16 +63,27 @@ class Searcher(object):
 
         for keyword_name, keyword_value in kwargs.iteritems():
 
-            try:
-                field, lookup = keyword_name.split('__')
-            except ValueError:
-                field = keyword_name
-                lookup = 'exact'
+            # The keyword_name is of the form field__lookuptype, where field can contains multiple parts
+            # separated by '_' to represent relations, like: partner_id__name__exact='Agrolait'.
+            field_parts = keyword_name.split('__')
+            if len(field_parts) == 1:
+                field = field_parts[0]
+                lookup = 'exact' # Default lookup
+            else:
+                if field_parts[-1] in LOOKUPS_METHOD:
+                    # The last field part is a lookup method (like 'partner_id__name__ilike=')
+                    field = '.'.join(field_parts[:-1])
+                    lookup = field_parts[-1]
+                else:
+                    field = '.'.join(field_parts)
+                    lookup = 'exact'
 
             if lookup == 'exact':
                 obj_search_pattern.append((field, '=', keyword_value))
             elif lookup == 'iexact' or lookup == 'ilike':
                 obj_search_pattern.append((field, 'ILIKE', keyword_value))
+            elif lookup == 'like':
+                obj_search_pattern.append((field, 'LIKE', keyword_value))
             elif lookup == 'xmlid':
                 # This option improve the basic search method, and allow searching by XMLID
                 # for related field. 'partner_id__xmlid' will be replaced by 'partner_id.id'
