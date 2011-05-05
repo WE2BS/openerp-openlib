@@ -31,7 +31,7 @@ class Searcher(object):
     def __init__(self, cursor, user_id, obj, context=None, **kwargs):
 
         """
-        Constructs a search object call search if obj is specified.
+        Constructs a search object and call search if obj is specified.
         """
 
         self._cursor = cursor
@@ -49,17 +49,17 @@ class Searcher(object):
         
         return len(self._last_search_ids)
 
-    def search(self, context=None, **kwargs):
+    def search(self, text=None, **kwargs):
 
         """
-        Search objects of type "obj" based on the keywords attributes. 
+        Search objects of type based on the keywords attributes.
         """
 
         obj_pool = pooler.get_pool(self._cursor.dbname).get(self._obj)
         obj_search_pattern = []
 
         if not obj_pool:
-            raise osv.osv.except_osv('Error', 'Invalid object : %s' % obj)
+            raise osv.osv.except_osv('Error', 'Invalid object : %s' % self._obj)
 
         for keyword_name, keyword_value in kwargs.iteritems():
 
