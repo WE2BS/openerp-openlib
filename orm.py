@@ -23,6 +23,7 @@ import logging
 
 LOOKUPS_METHOD = ('exact', 'iexact', 'like', 'ilike', 'xmlid')
 
+
 class Searcher(object):
 
     _last_search_pattern = None

@@ -17,6 +17,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import inspect
+
 from . partner import *
 from . orm import *
 from . localtools import *
+
+from osv import osv, fields
+
+def test():
+    current = inspect.currentframe()
+    for data in inspect.getouterframes(current):
+        print data[0].f_locals
+
+class DemoObject(osv.osv):
+
+    _name = 'openlib.demo'
+    _columns = {
+        'name' : fields.char('Name', size=12)
+    }
+
+
+    def run_demo(self, cr, uid, ids, context=None):
+        test()
+    
+DemoObject()

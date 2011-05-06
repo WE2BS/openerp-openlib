@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record model="ir.ui.view" id="openlib_demo_form_view">
+            <field name="name">openlib.demo.form.view</field>
+            <field name="model">openlib.demo</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form string="Rent Order">
+                    <button string="Run action" type="object" name="run_demo"/>
+                </form>
+            </field>
+        </record>
+        <record model="ir.actions.act_window" id="openlib_demo_action_form">
+            <field name="name">OpenLibrary</field>
+            <field name="res_model">openlib.demo</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form,tree</field>
+            <field name="usage">menu</field>
+        </record>
+        <menuitem id="openlib_demo_menu" name="OpenLibrary"/>
+        <menuitem id="openlib_demo_menu_1" name="OpenLibrary Demo" parent="openlib_demo_menu"
+                  action="openlib_demo_action_form"/>
+    </data>
+</openerp>

@@ -30,7 +30,7 @@
     "depends": ["base"],
     "init_xml": [],
     "demo_xml": [],
-    "update_xml": [],
+    "update_xml": ['view.xml'],
     "active": False,
     "test": [],
     "installable": True,
