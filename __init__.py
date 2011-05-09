@@ -17,34 +17,5 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import inspect
-
-from . partner import *
+from . tools import *
 from . orm import *
-from . localtools import *
-from . search import Q, ExtendedOsv
-
-from osv import osv, fields
-
-def test():
-    current = inspect.currentframe()
-    for data in inspect.getouterframes(current):
-        print data[0].f_locals
-
-class DemoObject(osv.osv, ExtendedOsv):
-
-    _name = 'openlib.demo'
-    _columns = {
-        'name' : fields.char('Name', size=12),
-        'number' : fields.integer(),
-        'text' : fields.text(),
-        'number1' : fields.integer(),
-    }
-
-    def run_demo(self, cr, uid, ids, context=None):
-        for obj in self.filter(name='Thibaut'):
-            print obj.number
-        print self.get(name='Thibaut').number1
-        print 'obj', self.get('stock.group_stock_user', _object='res.groups')
-    
-DemoObject()

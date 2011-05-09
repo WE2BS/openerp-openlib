@@ -17,132 +17,314 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import pooler
-import osv
-import logging
+from __future__ import unicode_literals, print_function
+from inspect import currentframe, getouterframes
 
-LOOKUPS_METHOD = ('exact', 'iexact', 'like', 'ilike', 'xmlid')
+__all__ = ['Q', 'ExtendedOsv']
 
+class Q(object):
 
-class Searcher(object):
+    """
+    This class represents an abstract query and let you combine search options. Query objects can be combined
+    using operator | and &. Combinations return a Query object, which can be combined again. You can negate a Query
+    object prefixed it by a minus sign : -Q(name='Thibaut') which means name != Thibaut.
 
-    _last_search_pattern = None
-    _last_search_ids = []
+    Examples:
+        query = Q(name__startswith='T', firstname='Thibaut') | Q(age__gt=31)
+        query = -Q(text__contains='hi')
+    """
 
-    def __init__(self, cursor, user_id, obj, context=None, **kwargs):
+    def __init__(self, *args, **kwargs):
 
-        """
-        Constructs a search object and call search if obj is specified.
-        """
+        self._search_list = ['&']
+        self.parse(**kwargs)
 
-        self._cursor = cursor
-        self._user_id = user_id
-        self._obj = obj
-
-        if obj:
-            self.search(context, **kwargs)
-
-    def __len__(self):
+    def __or__(self, other):
 
         """
-        Returns the len of the last result returned by search().
-        """
-        
-        return len(self._last_search_ids)
-
-    def search(self, text=None, **kwargs):
-
-        """
-        Search objects of type based on the keywords attributes.
+        Combine to Q object with a | and returns a new Q object.
         """
 
-        obj_pool = pooler.get_pool(self._cursor.dbname).get(self._obj)
-        obj_search_pattern = []
+        if not isinstance(other, Q):
+            raise TypeError('You only can use | with other Q objects.')
 
-        if not obj_pool:
-            raise osv.osv.except_osv('Error', 'Invalid object : %s' % self._obj)
+        new_q = Q()
+        new_q._search_list = self._join_search_list('|', other._search_list)
 
-        for keyword_name, keyword_value in kwargs.iteritems():
+        return new_q
 
-            # The keyword_name is of the form field__lookuptype, where field can contains multiple parts
-            # separated by '_' to represent relations, like: partner_id__name__exact='Agrolait'.
-            field_parts = keyword_name.split('__')
-            if len(field_parts) == 1:
-                field = field_parts[0]
-                lookup = 'exact' # Default lookup
-            else:
-                if field_parts[-1] in LOOKUPS_METHOD:
-                    # The last field part is a lookup method (like 'partner_id__name__ilike=')
-                    field = '.'.join(field_parts[:-1])
-                    lookup = field_parts[-1]
-                else:
-                    field = '.'.join(field_parts)
-                    lookup = 'exact'
+    def __and__(self, other):
 
-            if lookup == 'exact':
-                obj_search_pattern.append((field, '=', keyword_value))
-            elif lookup == 'iexact' or lookup == 'ilike':
-                obj_search_pattern.append((field, 'ILIKE', keyword_value))
-            elif lookup == 'like':
-                obj_search_pattern.append((field, 'LIKE', keyword_value))
-            elif lookup == 'xmlid':
-                # This option improve the basic search method, and allow searching by XMLID
-                # for related field. 'partner_id__xmlid' will be replaced by 'partner_id.id'
-                # with the ID corresponding to the XML ID.
-                module = False
-                xmlid = keyword_value
-                keyword_value_splitted = keyword_value.split('.')
-                if len(keyword_value_splitted) > 1:
-                    module = keyword_value_splitted[0]
-                    xmlid = '.'.join(keyword_value_splitted[1:])
-                search_data = Searcher(self._cursor, self._user_id, 'ir.model.data')
-                if module:
-                    result = search_data.search(module=module, name=xmlid).browse_one()
-                else:
-                    result = search_data.search(name=xmlid)
-                    if len(result) > 1:
-                        logging.warning('An XMLID search returned more than one result: %s' % xmlid)
-                        logging.warning('Only the first one has been returned, please specify a module.')
-                    result = result.browse_one()
-                if result:
-                    obj_search_pattern.append((field + '.id', '=', int(result.res_id)))
-                else:
-                    # We didn't find a corresponding XMLID in the DB.
-                    raise ValueError("The XMLID '%s' doesn't exists." % xmlid)
+        """
+        Combine to Q object with a & and returns a new Q object.
+        """
 
-        self._last_search_ids = obj_pool.search(self._cursor, self._user_id, obj_search_pattern, context=context)
-        self._last_search_obj_pool = obj_pool
-        self._last_search_pattern = obj_search_pattern
-        self._context = context
+        if not isinstance(other, Q):
+            raise TypeError('You only can use & with other Q objects.')
 
+        new_q = Q()
+        new_q._search_list = self._join_search_list('&', other._search_list)
+
+        return new_q
+
+    def __neg__(self):
+
+        """
+        Returns the negation of the condition: -Q(name='Thibaut') means that name IS NOT Thibaut.
+        """
+
+        self._search_list.insert(0, '!')
         return self
 
-    def browse(self, context=None):
+    def _join_search_list(self, operator, other_list):
 
         """
-        Use browse() on the list opf ids previously get by search().     
+        Combine the object search list with the one passed as argument :
+            ['&', '&', a, b, c] or'ed with ['&', d, e]
+        become :
+            ['|', '&', '&', '&', a, b ,c , d ,e]
         """
 
-        if not self._last_search_ids:
-            return []
-        if not context:
-            context = self._context
-        return self._last_search_obj_pool.browse(self._cursor, self._user_id, self._last_search_ids, context=context)
+        result = [operator]
+        tuples = []
+        for item in self._search_list + other_list:
+            if item in ('&', '|'):
+                result.append(item)
+            else:
+                tuples.append(item)
+        result.extend(tuples)
+        
+        return result
 
-    def browse_one(self, context=None):
+    def _like_protect(self, string, escape_char='\\'):
 
         """
-        Returns the first element contained in the result, or None.
+        Returns the string protected for use with LIKE/ILIKE.
         """
 
-        if not self._last_search_ids:
-            return None
-        if not context:
-            context = self._context
-        result = self._last_search_obj_pool.browse(
-            self._cursor, self._user_id, self._last_search_ids[0], context=context)
-        return result or None
+        return string.replace('_', '%s_' % escape_char)\
+            .replace('%', '%s%%' % escape_char).replace(escape_char, escape_char*2)
 
     @property
-    def ids(self):
-        return self._last_search_ids
+    def search_list(self):
+
+        """
+        Returns a formatted search list usable by OpenERP search() method, if you want to use Q objects with search().
+        """
+
+        return self._search_list
+
+    def parse(self, **kwargs):
+
+        """
+        Parses the arguments of the Q object to create the final search tuple used by OpenERP. Keyword args should
+        be of the form <name>__<lookup-type> where lookup-type is one of the following value :
+
+            exact, iexact, like, ilike, gt, lt, ge, le, startswith, endswith, contains
+
+        If no lookup-type is specified, 'exact' is used by default. Please not that you have to specify the lookup
+        method for relational search: partner__age is not valid, but partner__age__exact is. This restriction avoid
+        confusion if you have a column with the same name than a lookup method.
+        """
+
+        for kwarg, value in kwargs.iteritems():
+
+            # If kwarg name is composed of multiple '__' like 'partner__age__gt', we remplace the '__' by points :
+            # name = partner.age, lookup = 'gt'. This will allow relationship query.
+            kwarg_splitted = kwarg.split('__')
+            if len(kwarg_splitted) > 1:
+                name, lookup = '.'.join(kwarg_splitted[:-1]), kwarg_splitted[-1]
+            else:
+                name, lookup = kwarg, 'exact'
+
+            # Convertions between Q lookup methods and OpenERP methods
+            if lookup == 'exact':
+                openerp_lookup = '='
+            elif lookup == 'iexact':
+                value, openerp_lookup = self._like_protect(value), 'ilike'
+            elif lookup in ('like', 'ilike'):
+                openerp_lookup = lookup
+            elif lookup == 'gt':
+                openerp_lookup = '>'
+            elif lookup == 'lt':
+                openerp_lookup = '<'
+            elif lookup == 'ge':
+                openerp_lookup = '>='
+            elif lookup == 'le':
+                openerp_lookup = '<='
+            elif lookup in ('startswith', 'istartswith'):
+                value, openerp_lookup = self._like_protect(value) + '%', 'like' if lookup == 'startswith' else 'ilike'
+            elif lookup in ('endswith', 'iendswith'):
+                value, openerp_lookup = '%' + self._like_protect(value), 'like' if lookup == 'endswith' else 'ilike'
+            elif lookup in ('contains', 'icontains'):
+                value, openerp_lookup = '%' + self._like_protect(value) + '%', 'like' if lookup == 'contains' else 'ilike'
+            else:
+                raise NotImplementedError('The lookup method %s is not implemented.' % lookup)
+
+            # We remove the implicit '&' and set it manually every 2 tuples
+            if len(self._search_list) > 2 and len(self._search_list) % 3 == 0:
+                self._search_list.insert(0, '&')
+            self._search_list.append((name, openerp_lookup, value))
+
+        # If we have only 1 value, we remove the '&' from the search list, because it will cause
+        # problems when combining Q objects.
+        if len(self._search_list) == 2:
+            del self._search_list[0]
+
+class ExtendedOsv(object):
+
+    """
+    This class adds some functionalities to the OpenERP ORM :
+        - The find() method, a search-like method with support for Q objects.
+        - The filter() method, a search-and-browse which supports Q objects.
+        - The get() method, a search-and-browse which returns only one object. Supports XMLID search.
+
+    To enable these three methods on your object, you must make your class inherit it :
+
+        class MyObject(osv.osv, openlib.ExtendedOsv):
+            ...
+
+    Remember that these methods will only exists for objects which inherit ExtendedOsv. To allow you to use them
+    on other objects too, you can specify the _object argument when calling them :
+
+        self.filter(name='Agrolait', _object='res.partner')
+
+    If the class inherit ExtendedOsv, you can directly do this :
+
+        self.pool.get('other.object').filter(name='xxx')
+
+    
+    """
+
+    def _get_cr_uid_context(self):
+
+        """
+        Returns a 3-tuple containing the cursor, user id and context. We took these values from
+        the current frame "grandparent" (or parent), in the variables named cr, uid, context or _cr, _uid, _context.
+        """
+
+        try:
+            parents = inspect.getouterframes(inspect.currentframe())
+            parent = parents[1][0]
+            grandparent = parents[2][0]
+        except IndexError:
+            return None, None, None
+
+        # This method will be called by filter(), find() and get(), they will have _cr, _uid and _context variables as
+        # arguments. If they are defined, we use them. Else, we check in the grand parent if there are cr, uid or context.
+        cr = parent.f_locals.get('_cr', None)
+        uid = parent.f_locals.get('_uid', None)
+        context = parent.f_locals.get('_context', None)
+
+        if not cr:
+            cr = grandparent.f_locals.get('cr', None)
+        if not uid:
+            uid = grandparent.f_locals.get('uid', None)
+        if not context:
+            context = grandparent.f_locals.get('context', None)
+
+        if not cr or not uid:
+            raise RuntimeError('Unable to get the "cr" or "uid" variables from the frame stack.')
+            
+        return cr, uid, context
+
+    def xmlid_to_id(self, cr, uid, xmlid, context=None):
+
+        """
+        Returns the ID corresponding to the XMLID or None.
+        """
+
+        xmlid_splitted = xmlid.split('.')
+        modeldata = self.pool.get('ir.model.data')
+
+        try:
+            xmlid = '.'.join(xmlid_splitted[1:])
+            module = xmlid_splitted[0]
+            search = [('name', '=', xmlid), ('module', '=', module)]
+        except IndexError:
+            search = [('name', '=', xmlid)]
+
+        model_data_ids = modeldata.search(cr, uid, search, context=context)
+
+        if not model_data_ids:
+            return None
+        
+        return modeldata.browse(cr, uid, model_data_ids[0], context=context).res_id
+
+    def find(self, q=None, _object=None, _cr=None, _uid=None, _context=None, _offset=0,
+             _limit=None, _order=None, _count=None,  **kwargs):
+
+        """
+        This method uses either Q objects direcly, or create a Q object based on its kwargs :
+            self.find(name='Thibaut', age=31)
+            self.find(Q(name='Thibaut') & Q(age=31))
+        The cursor, user id and context are found using inspection, unless manually specified.
+
+        Returns a list of ids, like search() does.
+        """
+
+        pool = self.pool.get(_object) if _object else self
+        cr, uid, context = self._get_cr_uid_context()
+
+        if not q:
+            q = Q(**kwargs)
+
+        ids = pool.search(cr, uid, q._search_list, offset=_offset, limit=_limit,
+            order=_order, context=context, count=_count)
+        
+        return ids
+
+    def filter(self, value=None, _object=None, _cr=None, _uid=None, _context=None, **kwargs):
+
+        """
+        This method is like a "search & browse" method. You can get objects based on search criteria
+        (Q object or kwargs) or on their ids. If you specify ids, search criteria are ignored.
+
+        Using search criteria will call find() and return the result of browse().
+        """
+
+        pool = self.pool.get(_object) if _object else self
+        cr, uid, context = self._get_cr_uid_context()
+
+        if value:
+            try:
+                iter(value)
+            except TypeError:
+                # If we can't iterate on the value, it's not considered as a list of ids
+                if not isinstance(value, Q):
+                    raise RuntimeError('You must use filter() on Q objects or ids.')
+                q = value
+            else:
+                # It's a list of ids, so we just browse() on it.
+                return pool.browse(cr, uid, value, context=context)
+        else:
+            q = Q(**kwargs)
+
+        return pool.browse(cr, uid, self.find(q, _object=_object), context=context)
+
+    def get(self, value=None, _object=None, _cr=None, _uid=None, _context=None, **kwargs):
+
+        """
+        This method returns one object corresponding to the search criteria :
+             - If value is an integer, the object with this id is returned.
+             - If value is a string, the object with this XMLID is returned.
+             - If value is not specified, a search is done using the kwargs, and the first result is returned.
+        Returns None if no object is found.
+        """
+
+        pool = self.pool.get(_object) if _object else self
+        cr, uid, context = self._get_cr_uid_context()
+
+        if isinstance(value, int):
+            return pool.browse(cr, uid, value, context=context)
+
+        if isinstance(value, basestring):
+            xmlid = self.xmlid_to_id(cr, uid, value, context)
+            if not xmlid:
+                return None
+            return pool.browse(cr, uid, xmlid, context=context)
+
+        try:
+            return self.filter(**kwargs)[0]
+        except IndexError:
+            return None

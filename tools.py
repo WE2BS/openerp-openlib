@@ -17,8 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import datetime
+__all__ = ['to_date', 'to_time', 'to_datetime']
 
+from datetime import datetime
 from tools.misc import DEFAULT_SERVER_DATETIME_FORMAT, DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_TIME_FORMAT
 
 def to_date(date_string, format=DEFAULT_SERVER_DATE_FORMAT):
@@ -27,7 +28,7 @@ def to_date(date_string, format=DEFAULT_SERVER_DATE_FORMAT):
     Converts a date string to a datetime.date object.
     """
 
-    return datetime.datetime.strptime(date_string, format).date()
+    return datetime.strptime(date_string, format).date()
 
 def to_time(time_string, format=DEFAULT_SERVER_TIME_FORMAT):
 
@@ -35,7 +36,7 @@ def to_time(time_string, format=DEFAULT_SERVER_TIME_FORMAT):
     Converts a time string to a tome object.
     """
 
-    return datetime.datetime.strptime(time_string, format).time()
+    return datetime.strptime(time_string, format).time()
 
 def to_datetime(datetime_string, format=DEFAULT_SERVER_DATETIME_FORMAT):
 
@@ -43,5 +44,5 @@ def to_datetime(datetime_string, format=DEFAULT_SERVER_DATETIME_FORMAT):
     Converts a datetime string to a datetime.datetime object.
     """
     
-    return datetime.datetime.strptime(datetime_string, format)
+    return datetime.strptime(datetime_string, format)
 

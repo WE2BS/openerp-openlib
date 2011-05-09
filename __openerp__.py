@@ -19,10 +19,10 @@
 
 {
     "name": "An OpenSource Library for OpenERP developpement",
-    "version": "0.1",
+    "version": "0.2",
     "author": "UIDE/WE2BS",
     "category": "Developpement/Library",
-    "website": "http://www.we2bs.com",
+    "website": "https://github.com/WE2BS/openerp-openlib",
     "description":
     """
     An OpenSource Library for OpenERP 6.
@@ -30,7 +30,7 @@
     "depends": ["base"],
     "init_xml": [],
     "demo_xml": [],
-    "update_xml": ['view.xml'],
+    "update_xml": [],
     "active": False,
     "test": [],
     "installable": True,
