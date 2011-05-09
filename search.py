@@ -175,8 +175,25 @@ class ExtendedOsv(object):
 
     """
     This class adds some functionalities to the OpenERP ORM :
-        - The find() method, an search-like method with support for Q objects.
-        - The get() method, a shortcut to find().browse_one()
+        - The find() method, a search-like method with support for Q objects.
+        - The filter() method, a search-and-browse which supports Q objects.
+        - The get() method, a search-and-browse which returns only one object. Supports XMLID search.
+
+    To enable these three methods on your object, you must make your class inherit it :
+
+        class MyObject(osv.osv, openlib.ExtendedOsv):
+            ...
+
+    Remember that these methods will only exists for objects which inherit ExtendedOsv. To allow you to use them
+    on other objects too, you can specify the _object argument when calling them :
+
+        self.filter(name='Agrolait', _object='res.partner')
+
+    If the class inherit ExtendedOsv, you can directly do this :
+
+        self.pool.get('other.object').filter(name='xxx')
+
+    
     """
 
     def _get_cr_uid_context(self):
@@ -193,6 +210,8 @@ class ExtendedOsv(object):
         except IndexError:
             return None, None, None
 
+        # This method will be called by filter(), find() and get(), they will have _cr, _uid and _context variables as
+        # arguments. If they are defined, we use them. Else, we check in the grand parent if there are cr, uid or context.
         cr = parent.f_locals.get('_cr', None)
         uid = parent.f_locals.get('_uid', None)
         context = parent.f_locals.get('_context', None)
@@ -208,6 +227,29 @@ class ExtendedOsv(object):
             raise RuntimeError('Unable to get the "cr" or "uid" variables from the frame stack.')
             
         return cr, uid, context
+
+    def xmlid_to_id(self, cr, uid, xmlid, context=None):
+
+        """
+        Returns the ID corresponding to the XMLID or None.
+        """
+
+        xmlid_splitted = xmlid.split('.')
+        modeldata = self.pool.get('ir.model.data')
+
+        try:
+            xmlid = '.'.join(xmlid_splitted[1:])
+            module = xmlid_splitted[0]
+            search = [('name', '=', xmlid), ('module', '=', module)]
+        except IndexError:
+            search = [('name', '=', xmlid)]
+
+        model_data_ids = modeldata.search(cr, uid, search, context=context)
+
+        if not model_data_ids:
+            return None
+        
+        return modeldata.browse(cr, uid, model_data_ids[0], context=context).res_id
 
     def find(self, q=None, _object=None, _cr=None, _uid=None, _context=None, _offset=0,
              _limit=None, _order=None, _count=None,  **kwargs):
@@ -258,4 +300,31 @@ class ExtendedOsv(object):
         else:
             q = Q(**kwargs)
 
-        return pool.browse(cr, uid, pool.find(q), context=context)
+        return pool.browse(cr, uid, self.find(q, _object=_object), context=context)
+
+    def get(self, value=None, _object=None, _cr=None, _uid=None, _context=None, **kwargs):
+
+        """
+        This method returns one object corresponding to the search criteria :
+             - If value is an integer, the object with this id is returned.
+             - If value is a string, the object with this XMLID is returned.
+             - If value is not specified, a search is done using the kwargs, and the first result is returned.
+        Returns None if no object is found.
+        """
+
+        pool = self.pool.get(_object) if _object else self
+        cr, uid, context = self._get_cr_uid_context()
+
+        if isinstance(value, int):
+            return pool.browse(cr, uid, value, context=context)
+
+        if isinstance(value, basestring):
+            xmlid = self.xmlid_to_id(cr, uid, value, context)
+            if not xmlid:
+                return None
+            return pool.browse(cr, uid, xmlid, context=context)
+
+        try:
+            return self.filter(**kwargs)[0]
+        except IndexError:
+            return None

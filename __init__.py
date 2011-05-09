@@ -44,5 +44,7 @@ class DemoObject(osv.osv, ExtendedOsv):
     def run_demo(self, cr, uid, ids, context=None):
         for obj in self.filter(name='Thibaut'):
             print obj.number
+        print self.get(name='Thibaut').number1
+        print 'obj', self.get('stock.group_stock_user', _object='res.groups')
     
 DemoObject()
