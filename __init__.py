@@ -22,6 +22,7 @@ import inspect
 from . partner import *
 from . orm import *
 from . localtools import *
+from . search import Q
 
 from osv import osv, fields
 
@@ -34,11 +35,15 @@ class DemoObject(osv.osv):
 
     _name = 'openlib.demo'
     _columns = {
-        'name' : fields.char('Name', size=12)
+        'name' : fields.char('Name', size=12),
+        'number' : fields.integer(),
+        'text' : fields.text(),
+        'number1' : fields.integer(),
     }
 
-
     def run_demo(self, cr, uid, ids, context=None):
-        test()
+        q = Q(name='lol', number=1, text__contains='Hi') | Q(number1=15)
+        q = q & Q(number1=17)
+        self.search(cr, uid, q.search_list)
     
 DemoObject()
