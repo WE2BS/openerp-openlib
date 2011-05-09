@@ -22,7 +22,7 @@ import inspect
 from . partner import *
 from . orm import *
 from . localtools import *
-from . search import Q
+from . search import Q, ExtendedOsv
 
 from osv import osv, fields
 
@@ -31,7 +31,7 @@ def test():
     for data in inspect.getouterframes(current):
         print data[0].f_locals
 
-class DemoObject(osv.osv):
+class DemoObject(osv.osv, ExtendedOsv):
 
     _name = 'openlib.demo'
     _columns = {
@@ -42,8 +42,7 @@ class DemoObject(osv.osv):
     }
 
     def run_demo(self, cr, uid, ids, context=None):
-        q = Q(name='lol', number=1, text__contains='Hi') | Q(number1=15)
-        q = q & Q(number1=17)
-        self.search(cr, uid, q.search_list)
+        for obj in self.filter(name='Thibaut'):
+            print obj.number
     
 DemoObject()

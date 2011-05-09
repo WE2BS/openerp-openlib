@@ -7,6 +7,10 @@
             <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="Rent Order">
+                    <field name="name"/>
+                    <field name="number"/>
+                    <field name="text"/>
+                    <field name="number1"/>
                     <button string="Run action" type="object" name="run_demo"/>
                 </form>
             </field>

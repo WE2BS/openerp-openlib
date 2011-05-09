@@ -67,6 +67,15 @@ class Q(object):
 
         return new_q
 
+    def __neg__(self):
+
+        """
+        Returns the negation of the condition: -Q(name='Thibaut') means that name IS NOT Thibaut.
+        """
+
+        self._search_list.insert(0, '!')
+        return self
+
     def _join_search_list(self, operator, other_list):
 
         """
@@ -98,6 +107,11 @@ class Q(object):
 
     @property
     def search_list(self):
+
+        """
+        Returns a formatted search list usable by OpenERP search() method, if you want to use Q objects with search().
+        """
+
         return self._search_list
 
     def parse(self, **kwargs):
@@ -157,9 +171,91 @@ class Q(object):
         if len(self._search_list) == 2:
             del self._search_list[0]
 
+class ExtendedOsv(object):
 
-if __name__ == '__main__':
-    
-    q0 = Q(name='Thibaut')
-    print(q0.search_list)
+    """
+    This class adds some functionalities to the OpenERP ORM :
+        - The find() method, an search-like method with support for Q objects.
+        - The get() method, a shortcut to find().browse_one()
+    """
 
+    def _get_cr_uid_context(self):
+
+        """
+        Returns a 3-tuple containing the cursor, user id and context. We took these values from
+        the current frame "grandparent" (or parent), in the variables named cr, uid, context or _cr, _uid, _context.
+        """
+
+        try:
+            parents = inspect.getouterframes(inspect.currentframe())
+            parent = parents[1][0]
+            grandparent = parents[2][0]
+        except IndexError:
+            return None, None, None
+
+        cr = parent.f_locals.get('_cr', None)
+        uid = parent.f_locals.get('_uid', None)
+        context = parent.f_locals.get('_context', None)
+
+        if not cr:
+            cr = grandparent.f_locals.get('cr', None)
+        if not uid:
+            uid = grandparent.f_locals.get('uid', None)
+        if not context:
+            context = grandparent.f_locals.get('context', None)
+
+        if not cr or not uid:
+            raise RuntimeError('Unable to get the "cr" or "uid" variables from the frame stack.')
+            
+        return cr, uid, context
+
+    def find(self, q=None, _object=None, _cr=None, _uid=None, _context=None, _offset=0,
+             _limit=None, _order=None, _count=None,  **kwargs):
+
+        """
+        This method uses either Q objects direcly, or create a Q object based on its kwargs :
+            self.find(name='Thibaut', age=31)
+            self.find(Q(name='Thibaut') & Q(age=31))
+        The cursor, user id and context are found using inspection, unless manually specified.
+
+        Returns a list of ids, like search() does.
+        """
+
+        pool = self.pool.get(_object) if _object else self
+        cr, uid, context = self._get_cr_uid_context()
+
+        if not q:
+            q = Q(**kwargs)
+
+        ids = pool.search(cr, uid, q._search_list, offset=_offset, limit=_limit,
+            order=_order, context=context, count=_count)
+        
+        return ids
+
+    def filter(self, value=None, _object=None, _cr=None, _uid=None, _context=None, **kwargs):
+
+        """
+        This method is like a "search & browse" method. You can get objects based on search criteria
+        (Q object or kwargs) or on their ids. If you specify ids, search criteria are ignored.
+
+        Using search criteria will call find() and return the result of browse().
+        """
+
+        pool = self.pool.get(_object) if _object else self
+        cr, uid, context = self._get_cr_uid_context()
+
+        if value:
+            try:
+                iter(value)
+            except TypeError:
+                # If we can't iterate on the value, it's not considered as a list of ids
+                if not isinstance(value, Q):
+                    raise RuntimeError('You must use filter() on Q objects or ids.')
+                q = value
+            else:
+                # It's a list of ids, so we just browse() on it.
+                return pool.browse(cr, uid, value, context=context)
+        else:
+            q = Q(**kwargs)
+
+        return pool.browse(cr, uid, pool.find(q), context=context)
