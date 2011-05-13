@@ -19,8 +19,15 @@
 
 __all__ = ['to_date', 'to_time', 'to_datetime']
 
+# We could have import this from OpenERP, but the docs couldn't have been built without OpenERP
+# installed. Moreover, until the 6.1, we can't import from openerp.* which causes conflicts.
+DEFAULT_SERVER_DATE_FORMAT = "%Y-%m-%d"
+DEFAULT_SERVER_TIME_FORMAT = "%H:%M:%S"
+DEFAULT_SERVER_DATETIME_FORMAT = "%s %s" % (
+    DEFAULT_SERVER_DATE_FORMAT,
+    DEFAULT_SERVER_TIME_FORMAT)
+
 from datetime import datetime
-from tools.misc import DEFAULT_SERVER_DATETIME_FORMAT, DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_TIME_FORMAT
 
 def to_date(date_string, format=DEFAULT_SERVER_DATE_FORMAT):
 

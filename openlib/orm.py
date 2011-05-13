@@ -28,10 +28,6 @@ class Q(object):
     This class represents an abstract query and let you combine search options. Query objects can be combined
     using operator | and &. Combinations return a Query object, which can be combined again. You can negate a Query
     object prefixed it by a minus sign : -Q(name='Thibaut') which means name != Thibaut.
-
-    Examples:
-        query = Q(name__startswith='T', firstname='Thibaut') | Q(age__gt=31)
-        query = -Q(text__contains='hi')
     """
 
     def __init__(self, *args, **kwargs):
@@ -42,7 +38,7 @@ class Q(object):
     def __or__(self, other):
 
         """
-        Combine to Q object with a | and returns a new Q object.
+        Combine two Q object with a | and returns a new Q object.
         """
 
         if not isinstance(other, Q):
@@ -56,7 +52,7 @@ class Q(object):
     def __and__(self, other):
 
         """
-        Combine to Q object with a & and returns a new Q object.
+        Combine two Q object with a & and returns a new Q object.
         """
 
         if not isinstance(other, Q):
@@ -178,22 +174,6 @@ class ExtendedOsv(object):
         - The find() method, a search-like method with support for Q objects.
         - The filter() method, a search-and-browse which supports Q objects.
         - The get() method, a search-and-browse which returns only one object. Supports XMLID search.
-
-    To enable these three methods on your object, you must make your class inherit it :
-
-        class MyObject(osv.osv, openlib.ExtendedOsv):
-            ...
-
-    Remember that these methods will only exists for objects which inherit ExtendedOsv. To allow you to use them
-    on other objects too, you can specify the _object argument when calling them :
-
-        self.filter(name='Agrolait', _object='res.partner')
-
-    If the class inherit ExtendedOsv, you can directly do this :
-
-        self.pool.get('other.object').filter(name='xxx')
-
-    
     """
 
     def _get_cr_uid_context(self):
@@ -204,7 +184,7 @@ class ExtendedOsv(object):
         """
 
         try:
-            parents = inspect.getouterframes(inspect.currentframe())
+            parents = getouterframes(currentframe())
             parent = parents[1][0]
             grandparent = parents[2][0]
         except IndexError:

@@ -17,5 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . tools import *
-from . orm import *
+"""
+The OpenERP 6 Library (OpenLib) is a useful tool for OpenERP developpers. The :py:mod:`openlib.orm` module
+let you extend the OpenERP ORM to add some features.
+"""
