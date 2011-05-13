@@ -19,7 +19,7 @@ The ExtendedOsv class
 
 .. class: ExtendedOsv
 
-Every object which inherit from this class can use the following methods. These methods support a django-like style
+Every object which inherit from this class can use the following methods. These methods support a :ref:`django-like style <keywords-format>`
 and doesn't require you to pass them  *cr*, *uid* or *context* variables. These variables are recovered from the
 execution stack. This means that you **must** have variables named *cr*, *uid*, and *context* (optional) when
 you call these methods. Generally, these variables are passed by OpenERP.
@@ -39,7 +39,7 @@ find
     :class:`Q` objects instead of the polish notation used in :meth:`search`.
 
     :param q: A :class:`Q` object (the query).
-    :param kwargs: Search keywords if you don't use :class:`Q`.
+    :param kwargs: :ref:`Search keywords <keywords-format>` if you don't use :class:`Q`.
     :returns: A list of integers, corresponding to ids found.
 
     .. note ::
@@ -70,7 +70,7 @@ filter
     :meth:`browse` call so you can iterate over the results.
 
     :param value: Can be a :class:`Q` object or a list of ids.
-    :param kwargs: Search keywords if you don't specify *value*.
+    :param kwargs: :ref:`Search keywords <keywords-format>` if you don't specify *value*.
     :returns: A list of objects as returned by :meth:`browse`.
 
 **Examples**
@@ -100,7 +100,7 @@ get
         * An integer, then the object corresponding to this id is returned
         * A string, then the object with this XMLID is returned
         * A :class:`Q` object, return the first object corresponding to the criteria.
-        * None, then the first object corresponding to the search keywords is returned
+        * None, then the first object corresponding to the :ref:`search keywords <keywords-format>` is returned
 
     :param value: The search criteria (see above)
     :param kwargs: If *value* is None, search keywords
@@ -130,3 +130,75 @@ xmlid_to_id
     .. note::
 
         This method does not uses automatic detection of cr, uid and context. 
+
+Query Objects
+-------------
+
+.. class:: Q
+
+This class let you create complex search query easily. It uses :ref:`django-like keyword arguments <keywords-format>` to define search criteria.
+These objects can be combined with *&* or *|* and prefixed with *-* to negate them : ::
+
+    criteria = Q(name='Peter', age=12) | Q(name='Paul')
+
+This example will be translated into this SQL request : ::
+
+    (name='Peter' AND age=12) OR name='Paul'
+
+Prefixing :class:`Q` objects with a minus sign will negate them: ::
+
+    criteria = -Q(name='Paul')
+
+Which means *name IS NOT Paul*. You can create complex search expressions like this one : ::
+
+    criteria = (Q(name='Paul') | Q(name='Pierre)) & Q(age=12)) | -Q(age=12)
+
+For a detailed description the form keywords argument can take, read keywords argument format.
+
+.. _keywords-format:
+
+Keywords arguments format
+-------------------------
+
+With OpenLib, :class:`Q` objects and :class:`Extendedosv` class supports keyword argument formatting to specify
+you search criteria. The simple form of the keyword argument is : ::
+
+    name='value'
+
+Where *name* is the name of a column. But you can specify a lookup method using this syntax : ::
+
+    column__lookup='value'
+
+Where *lookup* can be one of the following values :
+
+    * **exact** - The default, same as not specifying a lookup method.
+    * **iexact** - Same as *exact*, but case insensitive.
+    * **like** - Performes an SQL LIKE with the value.
+    * **ilike** - Same as *like* but case insensitive.
+    * **gt** - Greater than, same as '>'.
+    * **lt** - Lesser than, same as '<'.
+    * **ge** - Geather than or equal, same as '>='.
+    * **le** - Lesser than or equal, same as '<='.
+    * **startswith** / **istartswith** - A shortcut to LIKE 'Value%'. The value is *like-protected* (special chars like % or _ are escaped).
+    * **endswith** / **iendswith** - A shortcut to LIKE '%Value'. Value is like-protected.
+    * **contains** / **icontains** - A shortcut to LIKE '%Value%'. Value is like-protected.
+
+The column name can be separated with '__' to represent a relation: ::
+
+    Q(partner__address__country__code__exact=='Fr')
+    
+.. note::
+
+    To avoid conflicts in the case you have a column which have the same name that a lookup methods, you must explicitly
+    use a lookup methods when using relations.
+
+Examples
+~~~~~~~~
+
+Using Q objects: ::
+
+    self.filter(Q(name__startswith='P') | Q(age__gt=12))
+
+Using relation without Q objects: ::
+
+    self.find(address__city='Paris', _object='res.partners')
