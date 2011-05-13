@@ -123,13 +123,24 @@ class Q(object):
         confusion if you have a column with the same name than a lookup method.
         """
 
+        if not kwargs:
+            self._search_list = []
+            return
+
         for kwarg, value in kwargs.iteritems():
 
             # If kwarg name is composed of multiple '__' like 'partner__age__gt', we remplace the '__' by points :
             # name = partner.age, lookup = 'gt'. This will allow relationship query.
             kwarg_splitted = kwarg.split('__')
+
             if len(kwarg_splitted) > 1:
-                name, lookup = '.'.join(kwarg_splitted[:-1]), kwarg_splitted[-1]
+                if kwarg_splitted[-1] in ('exact', 'iexact', 'like', 'ilike', 'gt', 'lt', 'ge', 'le', 'startswith',
+                                          'istartswith', 'endswith', 'iendswith', 'contains', 'icontains'):
+                    # If the last element is a lookup name, we use it -- WARNING: This means that if a column
+                    # have the same name than a lookup type, you must repeat it !
+                    name, lookup = '.'.join(kwarg_splitted[:-1]), kwarg_splitted[-1]
+                else:
+                    name, lookup = '.'.join(kwarg_splitted), 'exact'
             else:
                 name, lookup = kwarg, 'exact'
 
@@ -308,6 +319,6 @@ class ExtendedOsv(object):
             return self.filter(value, _object, _cr, _uid, _context)
 
         try:
-            return self.filter(**kwargs)[0]
+            return self.filter(_object=_object, _cr=_cr, _uid=_uid, _context=_context, **kwargs)[0]
         except IndexError:
             return None

@@ -185,12 +185,11 @@ Where *lookup* can be one of the following values :
 
 The column name can be separated with '__' to represent a relation: ::
 
-    Q(partner__address__country__code__exact=='Fr')
+    Q(partner__address__country__code=='Fr')
     
 .. note::
 
-    To avoid conflicts in the case you have a column which have the same name that a lookup methods, you must explicitly
-    use a lookup methods when using relations.
+    If you have a column which have the same name that a lookup method, you must repeat it (xxx__exact__exact).
 
 Examples
 ~~~~~~~~
