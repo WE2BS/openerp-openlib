@@ -52,3 +52,7 @@ you call these methods. Generally, these variables are passed by OpenERP.
 
         objects_ids = self.find(name='OK')
 
+.. method:: ExtendedOsv.filter([value=None, _object=None, _cr=None, _uid=None, _context=None, **kwargs])
+
+    This method is a kind of search-and-browse. It uses :meth:`find` to search ids and then return the result of a
+    :meth:`browse` call so you can iterate over the results.
