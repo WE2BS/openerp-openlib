@@ -11,6 +11,14 @@ Modules provided by OpenLib :
     * :mod:`openlib.orm` - An extension to the OpenERP ORM
     * :mod:`openlib.tools` - Tools functions (like date manipulation)
 
+Index
+=====
+
+.. toctree::
+
+    orm
+    tools
+
 Indices and tables
 ==================
 

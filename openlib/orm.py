@@ -271,7 +271,7 @@ class ExtendedOsv(object):
                 iter(value)
             except TypeError:
                 # If we can't iterate on the value, it's not considered as a list of ids
-                if not isinstance(value, Q):
+                if isinstance(value, Q):
                     raise RuntimeError('You must use filter() on Q objects or ids.')
                 q = value
             else:
@@ -303,6 +303,9 @@ class ExtendedOsv(object):
             if not xmlid:
                 return None
             return pool.browse(cr, uid, xmlid, context=context)
+
+        if isinstance(value, Q):
+            return self.filter(value, _object, _cr, _uid, _context)
 
         try:
             return self.filter(**kwargs)[0]
