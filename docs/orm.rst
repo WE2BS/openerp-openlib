@@ -3,7 +3,7 @@ OpenLib ORM Extension
 
 .. module:: openlib.orm
     :synopsis: An extension to the OpenERP ORM.
-.. currentmodule :: openlib
+.. currentmodule :: openlib.orm
 
 To use the OpenLib ORM Extension, you must import ExtendedOsv and Q classes: ::
 
