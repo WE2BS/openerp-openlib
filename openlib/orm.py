@@ -322,3 +322,13 @@ class ExtendedOsv(object):
             return self.filter(_object=_object, _cr=_cr, _uid=_uid, _context=_context, **kwargs)[0]
         except IndexError:
             return None
+
+    def pools(self, *args):
+
+        """
+        Returns a list of objects corresponding to the OpenERP passed as argument.     
+        """
+
+        if len(args) > 1:
+            return map(self.pool.get, args)
+        return self.pool.get(args[0])
