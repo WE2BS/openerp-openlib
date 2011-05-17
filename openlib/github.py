@@ -26,6 +26,7 @@ import sys
 import json
 import logging
 import traceback
+import platform
 
 import pooler
 
@@ -37,6 +38,24 @@ OPEN_ISSUES_URL = API_URL + '/issues/list/%s/%s/open'
 CLOSED_ISSUES_URL = API_URL + '/issues/list/%s/%s/closed'
 CREATE_ISSUE_URL = API_URL + '/issues/open/%s/%s'
 
+# Exceptions to report
+EXCEPTIONS = (
+    BufferError, ArithmeticError, AssertionError, AttributeError, ImportError, LookupError,
+    MemoryError, NameError, ReferenceError, RuntimeError, SyntaxError, TypeError, ValueError
+)
+
+# Message that will be posted into the issue
+BUG_MESSAGE = """
+Automatic bug report :
+
+```
+%(traceback)s
+```
+
+Platform: %(platform)s
+Python Version: %(version)s
+"""
+
 def report_bugs(func):
 
     """
@@ -44,10 +63,11 @@ def report_bugs(func):
     """
 
     def wrapper(*args, **kwargs):
+
         try:
             result = func(*args, **kwargs)
         except:
-            
+
             if not wrapper.config['GITHUB_ENABLED'] or not wrapper.config['GITHUB_USER'] or not wrapper.config['GITHUB_REPO']:
                 raise
 
@@ -55,15 +75,26 @@ def report_bugs(func):
             type, value, tb = sys.exc_info()
             repo_user, repo_name = wrapper.config['GITHUB_USER'],  wrapper.config['GITHUB_REPO']
 
+            # We ignore not builtins exceptions
+            if not isinstance(value, EXCEPTIONS):
+                raise
+
             # This http object will be used to make request to github
             h = httplib2.Http()
 
             _logger.exception('An exception occured, it will be reported to github.')
-            _logger.info('Checking if the exception has already been reported...')
+            _logger.info('Checking if the bug has already been reported...')
 
-            issue_title = '%s: %s' % (type.__name__, value)
-            issue_body = '\n'.join(traceback.format_exception(type, value, tb))
-            issue_body = 'Auto reported error:\n\n```\n%s\n```' % issue_body
+            source_function = tb.tb_next.tb_frame.f_code.co_name
+            source_line = tb.tb_next.tb_lineno
+
+            issue_title = '%s: %s (Line %d, %s)' % (type.__name__, value, source_line, source_function)
+            issue_exception = '\n'.join(traceback.format_exception(type, value, tb))
+            issue_message = BUG_MESSAGE % {
+                'traceback' : issue_exception,
+                'platform' : platform.platform(),
+                'version' : platform.python_version(),
+            }
 
             response, content = h.request(OPEN_ISSUES_URL % (repo_user, repo_name))
             response1, content1 = h.request(CLOSED_ISSUES_URL % (repo_user, repo_name))
@@ -78,7 +109,7 @@ def report_bugs(func):
 
             for issue in issues:
                 if issue['title'] == issue_title:
-                    _logger.info('This issue has already been reported. Consult bug report here :')
+                    _logger.info('This bug has already been reported. Consult bug report here :')
                     _logger.info(issue['html_url'])
                     raise
 
@@ -114,13 +145,13 @@ def report_bugs(func):
             # Reports the bug
             resp, content = h.request(CREATE_ISSUE_URL % (repo_user, repo_name), method='POST', body=urllib.urlencode({
                 'title':issue_title,
-                'body':issue_body,
+                'body':issue_message,
                 'login' : user.value,
                 'token' : token.value,
             }))
 
             if resp.status != 201:
-                _logger.error('Error while reporting bug on github: %s' % resp.human)
+                _logger.error('Error while reporting the bug on github: %s' % resp.human)
             else:
                 data = json.loads(content)
                 _logger.info('Bug reported here: %s' % data['issue']['html_url'])
