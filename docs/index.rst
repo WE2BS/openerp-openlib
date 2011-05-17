@@ -10,6 +10,11 @@ get a more readable code. If you have critical parts in your code, you still can
 Modules provided by OpenLib :
     * :mod:`openlib.orm` - An extension to the OpenERP ORM
     * :mod:`openlib.tools` - Tools functions (like date manipulation)
+    * :mod:`openlib.github` - Automatic github bug reports for your modules
+
+Moreover, OpenLib add some objects to OpenERP :
+
+    * :doc:`openlib.config <config>`  - A global configuration object, used to store database based variables.
 
 Index
 =====
@@ -18,6 +23,8 @@ Index
 
     orm
     tools
+    config
+    github
 
 Indices and tables
 ==================

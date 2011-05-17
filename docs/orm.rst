@@ -17,7 +17,7 @@ If you want your objects to natively support the extension, make them inherit fr
 The ExtendedOsv class
 ---------------------
 
-.. class: ExtendedOsv
+.. class:: ExtendedOsv
 
 Every object which inherit from this class can use the following methods. These methods support a :ref:`django-like style <keywords-format>`
 and doesn't require you to pass them  *cr*, *uid* or *context* variables. These variables are recovered from the

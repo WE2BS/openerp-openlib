@@ -35,6 +35,7 @@ class Config(osv.osv, ExtendedOsv):
         'module' : fields.char('Module', size=255, required=True),
         'key' : fields.char('Key', size=255, required=True),
         'value' : fields.char('Value', size=255),
+        'help' : fields.char('Help', size=255, readonly=True),
     }
 
 Config()

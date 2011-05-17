@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="config_github_user" model="openlib.config">
+            <field name="module">openlig.github</field>
+            <field name="key">GITHUB_USER</field>
+            <field name="help">GitHub user account used to report bugs.</field>
+        </record>
+        <record id="config_github_token" model="openlib.config">
+            <field name="module">openlig.github</field>
+            <field name="key">GITHUB_TOKEN</field>
+            <field name="help">GitHub token associated to the account. Check your account settings.</field>
+        </record>
+    </data>
+</openerp>

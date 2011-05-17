@@ -11,6 +11,7 @@
                     <field name="module"/>
                     <field name="key"/>
                     <field name="value"/>
+                    <field name="help"/>
                 </tree>
             </field>
         </record>
@@ -22,6 +23,7 @@
             <field name="arch" type="xml">
                 <form>
                     <field name="module"/>
+                    <field name="help"/>
                     <field name="key"/>
                     <field name="value"/>
                 </form>
