@@ -17,21 +17,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-{
-    "name": "An OpenSource Library for OpenERP developpement",
-    "version": "0.2",
-    "author": "UIDE/WE2BS",
-    "category": "Developpement/Library",
-    "website": "https://github.com/WE2BS/openerp-openlib",
-    "description":
+from __future__ import unicode_literals
+
+from osv import osv, fields
+from .. orm import ExtendedOsv
+
+import pickle
+
+class Config(osv.osv, ExtendedOsv):
+
     """
-    An OpenSource Library for OpenERP 6.
-    """,
-    "depends": ["base"],
-    "init_xml": [],
-    "demo_xml": [],
-    "update_xml": ['views/config.xml', 'views/menu.xml'],
-    "active": False,
-    "test": [],
-    "installable": True,
-}
+    This class simply defines a table in which you can store database-wide data. The data is automatically pickled.
+    """
+
+    _name = 'openlib.config'
+    _columns = {
+        'module' : fields.char('Module', size=255, required=True),
+        'key' : fields.char('Key', size=255, required=True),
+        'value' : fields.char('Value', size=255),
+    }
+
+Config()

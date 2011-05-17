@@ -98,8 +98,8 @@ class Q(object):
         Returns the string protected for use with LIKE/ILIKE.
         """
 
-        return string.replace('_', '%s_' % escape_char)\
-            .replace('%', '%s%%' % escape_char).replace(escape_char, escape_char*2)
+        return string.replace(escape_char, escape_char*2).replace('_', '%s_' % escape_char)\
+            .replace('%', '%s%%' % escape_char)
 
     @property
     def search_list(self):

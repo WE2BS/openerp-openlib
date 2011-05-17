@@ -17,16 +17,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import urllib2, urllib
+from __future__ import unicode_literals
+
+import urllib
+import httplib2
 import inspect
 import sys
 import json
 import logging
 import traceback
 
-API_URL = 'https://api.github.com/repos/%s/%s/issues/'
+import pooler
 
 _logger = logging.getLogger('openlib.github')
+
+# Github APIv2 URLs
+API_URL = 'https://github.com/api/v2/json'
+OPEN_ISSUES_URL = API_URL + '/issues/list/%s/%s/open'
+CLOSED_ISSUES_URL = API_URL + '/issues/list/%s/%s/closed'
+CREATE_ISSUE_URL = API_URL + '/issues/open/%s/%s'
 
 def report_bugs(func):
 
@@ -38,45 +47,86 @@ def report_bugs(func):
         try:
             result = func(*args, **kwargs)
         except:
-            if wrapper.config['GITHUB_ENABLED'] and wrapper.config['GITHUB_USER'] and wrapper.config['GITHUB_REPO']:
-                # We catch the exception and create a github issue if enabled
-                type, value, tb = sys.exc_info()
+            
+            if not wrapper.config['GITHUB_ENABLED'] or not wrapper.config['GITHUB_USER'] or not wrapper.config['GITHUB_REPO']:
+                raise
 
-                # We have to check that an issue with this name doesn't already exist. The name of the issue is
-                # the exception string + file name and line number.
-                name = "%s: %s (Line %d, in %s)" % (type.__name__, value, tb.tb_next.tb_lineno,
-                    tb.tb_next.tb_frame.f_code.co_name)
-                error = False
-                url = API_URL % (wrapper.config['GITHUB_USER'], wrapper.config['GITHUB_REPO'])
+            # We catch the exception and create a github issue if enabled
+            type, value, tb = sys.exc_info()
+            repo_user, repo_name = wrapper.config['GITHUB_USER'],  wrapper.config['GITHUB_REPO']
 
-                # Get a list of issues and check if our issue exists.
-                try:
-                    data = urllib2.urlopen(url)
-                    issues = json.load(data)
-                except (urllib2.URLError, urllib2.HTTPError):
-                    error = True
-                    _logger.exception('Unable to get a list of existing issues on github. Skipping issue report.')
+            # This http object will be used to make request to github
+            h = httplib2.Http()
 
-                if error: # If we can't connect to github, we just raise the initial exception
+            _logger.exception('An exception occured, it will be reported to github.')
+            _logger.info('Checking if the exception has already been reported...')
+
+            issue_title = '%s: %s' % (type.__name__, value)
+            issue_body = '\n'.join(traceback.format_exception(type, value, tb))
+            issue_body = 'Auto reported error:\n\n```\n%s\n```' % issue_body
+
+            response, content = h.request(OPEN_ISSUES_URL % (repo_user, repo_name))
+            response1, content1 = h.request(CLOSED_ISSUES_URL % (repo_user, repo_name))
+
+            for r in (response, response1):
+                if r.status != 200:
+                    _logger.error('Unable to connect to github: %s' % str(response.human))
                     raise
 
-                for issue in issues:
-                    if issue['title'] == name:
-                        _logger.warning("Bug won't reported on github, an issue with the same name exists :")
-                        _logger.warning(issue['url'])
-                        raise # We stop here and raise the initial exception
+            issues = json.loads(content)['issues']
+            issues.extend(json.loads(content1)['issues'])
 
-                # Else, we will post the issue on github !
-                data = {
-                    'title' : name,
-                    'body' : json.dumps('\n'.join(traceback.format_tb(tb))),
-                }
-                auth_handler = urllib2.HTTPBasicAuthHandler()
-                auth_handler.add_password(None, 'api.github.com', 'thibautd', 'XXX')
-                urllib2.install_opener(urllib2.build_opener(auth_handler))
-                urllib2.urlopen(url, urllib.urlencode(data))
+            for issue in issues:
+                if issue['title'] == issue_title:
+                    _logger.info('This issue has already been reported. Consult bug report here :')
+                    _logger.info(issue['html_url'])
+                    raise
+
+            _logger.info('Bug not reported - Trying to report the bug on github: %s/%s',
+                wrapper.config['GITHUB_USER'], wrapper.config['GITHUB_REPO'])
+
+            # If we are here, we have to report the issue on github. First of all, we have to search
+            # a cursor variable in the python stack, and a pooler, no matter where they are,
+            # to be able to access the database and read the github user/password configuration of the database.
+            current_frame = inspect.currentframe()
+            cr, uid = None, 1
+            for data in inspect.getouterframes(current_frame):
+                if 'cr' in data[0].f_locals:
+                    cr = data[0].f_locals['cr']
+                elif 'cr' in data[0].f_globals:
+                    cr = data[0].f_globals['cr']
+
+            if not cr:
+                _logger.warning('Unable to find a valid cursor in the Python stack. Aborting bug reporting.')
+                raise
+
+            pool = pooler.get_pool(cr.dbname)
+            pool_config = pool.get('openlib.config')
+
+            user = pool_config.get(module='openlib.github', key__iexact='GITHUB_USER')
+            token = pool_config.get(module='openlib.github', key__iexact='GITHUB_TOKEN')
+
+            if not user or not token:
+                _logger.warning('Unable to report bug: You must configure a github username/token.')
+                _logger.warning('Go to: Administraton->Customization->Variables to do this.')
+                raise
+
+            # Reports the bug
+            resp, content = h.request(CREATE_ISSUE_URL % (repo_user, repo_name), method='POST', body=urllib.urlencode({
+                'title':issue_title,
+                'body':issue_body,
+                'login' : user.value,
+                'token' : token.value,
+            }))
+
+            if resp.status != 201:
+                _logger.error('Error while reporting bug on github: %s' % resp.human)
+            else:
+                data = json.loads(content)
+                _logger.info('Bug reported here: %s' % data['issue']['html_url'])
 
             raise
+
         return result
     
     # We look for GITHUB_USER, GITHUB_REPO and GITHUB_DISABLED in global variables of the frame stack.
@@ -87,7 +137,7 @@ def report_bugs(func):
     config = {
         'GITHUB_USER' : None,
         'GITHUB_REPO' : None,
-        'GITHUB_ENABLED' : True,
+        'GITHUB_ENABLED' : False,
     }
 
     for data in frames:

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <!-- List view -->
+        <record id="config_list_view" model="ir.ui.view">
+            <field name="name">openlib.config.list.view</field>
+            <field name="model">openlib.config</field>
+            <field name="type">tree</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="module"/>
+                    <field name="key"/>
+                    <field name="value"/>
+                </tree>
+            </field>
+        </record>
+        <!-- Form view -->
+        <record id="config_form_view" model="ir.ui.view">
+            <field name="name">openlib.config.form.view</field>
+            <field name="model">openlib.config</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <field name="module"/>
+                    <field name="key"/>
+                    <field name="value"/>
+                </form>
+            </field>
+        </record>
+    </data>
+</openerp>
