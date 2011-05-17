@@ -14,8 +14,13 @@ Github module configuration
 For the example, we will imagine you are writing a module named *example*, hosted in a github repository named
 *openerp-example* by the organization *orga*. You just have to add two variables to your module's *__init__.py* : ::
 
+    GITHUB_ENABLED = True
     GITHUB_REPO = 'openerp-example'
     GITHUB_USER = 'orga'
+
+.. note::
+
+    Setting *GITHUB_ENABLED* to *False* will disable github bug reporting. Remember to unset it during developpement.
 
 Define the functions you want to watch
 --------------------------------------
