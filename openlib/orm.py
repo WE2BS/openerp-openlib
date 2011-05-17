@@ -190,29 +190,24 @@ class ExtendedOsv(object):
     def _get_cr_uid_context(self):
 
         """
-        Returns a 3-tuple containing the cursor, user id and context. We took these values from
-        the current frame "grandparent" (or parent), in the variables named cr, uid, context or _cr, _uid, _context.
+        Returns a 3-tuple containing the cursor, user id and context.
         """
 
-        try:
-            parents = getouterframes(currentframe())
-            parent = parents[1][0]
-            grandparent = parents[2][0]
-        except IndexError:
-            return None, None, None
+        cr, uid, context = None, None, None
 
-        # This method will be called by filter(), find() and get(), they will have _cr, _uid and _context variables as
-        # arguments. If they are defined, we use them. Else, we check in the grand parent if there are cr, uid or context.
-        cr = parent.f_locals.get('_cr', None)
-        uid = parent.f_locals.get('_uid', None)
-        context = parent.f_locals.get('_context', None)
+        for data in getouterframes(currentframe()):
 
-        if not cr:
-            cr = grandparent.f_locals.get('cr', None)
-        if not uid:
-            uid = grandparent.f_locals.get('uid', None)
-        if not context:
-            context = grandparent.f_locals.get('context', None)
+            frame = data[0]
+
+            if 'cr' in frame.f_locals:
+                cr = frame.f_locals['cr']
+            if 'uid' in frame.f_locals:
+                uid = frame.f_locals['uid']
+            if 'context' in frame.f_locals:
+                context = frame.f_locals['context']
+            
+            if not cr or not uid:
+                continue
 
         if not cr or not uid:
             raise RuntimeError('Unable to get the "cr" or "uid" variables from the frame stack.')
