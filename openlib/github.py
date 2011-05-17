@@ -72,7 +72,7 @@ def report_bugs(func):
                     'body' : json.dumps('\n'.join(traceback.format_tb(tb))),
                 }
                 auth_handler = urllib2.HTTPBasicAuthHandler()
-                auth_handler.add_password(None, 'api.github.com', 'thibautd', 'SYNIAk')
+                auth_handler.add_password(None, 'api.github.com', 'thibautd', 'XXX')
                 urllib2.install_opener(urllib2.build_opener(auth_handler))
                 urllib2.urlopen(url, urllib.urlencode(data))
 
