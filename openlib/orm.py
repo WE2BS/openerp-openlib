@@ -19,6 +19,9 @@
 
 from __future__ import unicode_literals, print_function
 from inspect import currentframe, getouterframes
+from tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_TIME_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
+
+import datetime
 
 __all__ = ['Q', 'ExtendedOsv']
 
@@ -144,6 +147,13 @@ class Q(object):
             else:
                 name, lookup = kwarg, 'exact'
 
+            if isinstance(value, datetime.datetime):
+                value = value.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+            elif isinstance(value, datetime.date):
+                value = value.strftime(DEFAULT_SERVER_DATE_FORMAT)
+            elif isinstance(value, datetime.time):
+                value = value.strftime(DEFAULT_SERVER_TIME_FORMAT)
+
             # Convertions between Q lookup methods and OpenERP methods
             if lookup == 'exact':
                 openerp_lookup = '='
@@ -185,6 +195,8 @@ class ExtendedOsv(object):
         - The find() method, a search-like method with support for Q objects.
         - The filter() method, a search-and-browse which supports Q objects.
         - The get() method, a search-and-browse which returns only one object. Supports XMLID search.
+        - The xmlid_to_id method()
+        - The pools() method.
     """
 
     def _get_cr_uid_context(self):
@@ -195,17 +207,27 @@ class ExtendedOsv(object):
 
         cr, uid, context = None, None, None
 
-        for data in getouterframes(currentframe()):
+        for frame_no, data in enumerate(getouterframes(currentframe())):
 
             frame = data[0]
 
-            if 'cr' in frame.f_locals:
-                cr = frame.f_locals['cr']
-            if 'uid' in frame.f_locals:
-                uid = frame.f_locals['uid']
-            if 'context' in frame.f_locals:
-                context = frame.f_locals['context']
-            
+            if frame_no == 1:
+                # We check if their are _cr, _uid and _context variables only in the direct parent
+                # frame in the case this method is called from get, filter or any other ExtendedOsv method.
+                if '_cr' in frame.f_locals:
+                    cr = frame.f_locals['_cr']
+                if '_uid' in frame.f_locals:
+                    uid = frame.f_locals['_uid']
+                if '_context' in frame.f_locals:
+                    context = frame.f_locals['_context']
+            else:
+                if not cr and 'cr' in frame.f_locals:
+                    cr = frame.f_locals['cr']
+                if not uid and 'uid' in frame.f_locals:
+                    uid = frame.f_locals['uid']
+                if not context and 'context' in frame.f_locals:
+                    context = frame.f_locals['context']
+
             if cr and uid:
                 break # We stop at the first cr/uid we find
 
