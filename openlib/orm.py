@@ -206,8 +206,8 @@ class ExtendedOsv(object):
             if 'context' in frame.f_locals:
                 context = frame.f_locals['context']
             
-            if not cr or not uid:
-                continue
+            if cr and uid:
+                break # We stop at the first cr/uid we find
 
         if not cr or not uid:
             raise RuntimeError('Unable to get the "cr" or "uid" variables from the frame stack.')
