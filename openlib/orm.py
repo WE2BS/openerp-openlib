@@ -18,19 +18,19 @@
 #
 
 from __future__ import unicode_literals, print_function
-from inspect import currentframe, getouterframes
-from tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_TIME_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
-import datetime
+from inspect import currentframe, getouterframes
+from datetime import datetime, date, time
+
+from . tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_TIME_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
 __all__ = ['Q', 'ExtendedOsv']
 
 class Q(object):
 
     """
-    This class represents an abstract query and let you combine search options. Query objects can be combined
-    using operator | and &. Combinations return a Query object, which can be combined again. You can negate a Query
-    object prefixed it by a minus sign : -Q(name='Thibaut') which means name != Thibaut.
+    This class represents a *search criteria*. You can combine Q objects using operators like *&* and *|* to create
+    complex expressions. Internally, OpenLib converts these Q objects to the polish notation used by OpenERP.
     """
 
     def __init__(self, *args, **kwargs):
@@ -101,8 +101,11 @@ class Q(object):
         Returns the string protected for use with LIKE/ILIKE.
         """
 
-        return string.replace(escape_char, escape_char*2).replace('_', '%s_' % escape_char)\
-            .replace('%', '%s%%' % escape_char)
+        res = string.replace(escape_char, escape_char*2)
+        res = res.replace('_', '%s_' % escape_char)
+        res = res.replace('%', '%s%%' % escape_char)
+        
+        return res
 
     @property
     def search_list(self):
@@ -147,11 +150,11 @@ class Q(object):
             else:
                 name, lookup = kwarg, 'exact'
 
-            if isinstance(value, datetime.datetime):
+            if isinstance(value, datetime):
                 value = value.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-            elif isinstance(value, datetime.date):
+            elif isinstance(value, date):
                 value = value.strftime(DEFAULT_SERVER_DATE_FORMAT)
-            elif isinstance(value, datetime.time):
+            elif isinstance(value, time):
                 value = value.strftime(DEFAULT_SERVER_TIME_FORMAT)
 
             # Convertions between Q lookup methods and OpenERP methods
@@ -202,7 +205,7 @@ class ExtendedOsv(object):
     def _get_cr_uid_context(self):
 
         """
-        Returns a 3-tuple containing the cursor, user id and context.
+        Returns a 3-tuple containing the cursor, user id and context thanks to introspection.
         """
 
         cr, uid, context = None, None, None
@@ -235,6 +238,21 @@ class ExtendedOsv(object):
             raise RuntimeError('Unable to get the "cr" or "uid" variables from the frame stack.')
             
         return cr, uid, context
+
+    def _get_pool(self, object=None):
+
+        """
+        Returns a valid pool that can be used by ExtendedOsv methods :
+        If object is None, returns the pool associated to self. Else, returns the object's pool.
+        """
+
+        if object:
+            pool = self.pool.get(object)
+        else:
+            pool = self
+        if not pool:
+            raise ValueError("Unable to get pool for object '%s', does it exist ?" % object)
+        return pool
 
     def xmlid_to_id(self, cr, uid, xmlid, context=None):
 
@@ -271,7 +289,7 @@ class ExtendedOsv(object):
         Returns a list of ids, like search() does.
         """
 
-        pool = self.pool.get(_object) if _object else self
+        pool = self._get_pool(_object)
         cr, uid, context = self._get_cr_uid_context()
 
         if not q:
@@ -291,7 +309,7 @@ class ExtendedOsv(object):
         Using search criteria will call find() and return the result of browse().
         """
 
-        pool = self.pool.get(_object) if _object else self
+        pool = self._get_pool(_object)
         cr, uid, context = self._get_cr_uid_context()
 
         if value:
@@ -320,7 +338,7 @@ class ExtendedOsv(object):
         Returns None if no object is found.
         """
 
-        pool = self.pool.get(_object) if _object else self
+        pool = self._get_pool(_object)
         cr, uid, context = self._get_cr_uid_context()
 
         if isinstance(value, int):
@@ -332,15 +350,15 @@ class ExtendedOsv(object):
                 return None
             return pool.browse(cr, uid, xmlid, context=context)
 
-        if isinstance(value, Q):
-            return self.filter(value, _object, _cr, _uid, _context)
-
         try:
-            return self.filter(_object=_object, _cr=_cr, _uid=_uid, _context=_context, **kwargs)[0]
+            # If the value is not an int or a string, it should be either a Q object or None. In this case, we do
+            # a find with limit=1 and we return the object or None.
+            res_id = self.find(value, _object=_object, _cr=_cr, _uid=_uid, _context=_context, _limit=1, **kwargs)[0]
+            return pool.browse(cr, uid, res_id, context=context)
         except IndexError:
             return None
 
-    def pools(self, *args):
+    def get_pools(self, *args):
 
         """
         Returns a list of objects corresponding to the OpenERP passed as argument.     

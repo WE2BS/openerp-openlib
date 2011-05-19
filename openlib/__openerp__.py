@@ -18,14 +18,19 @@
 #
 
 {
-    "name": "An OpenSource Library for OpenERP developpement",
+    "name": "An OpenSource Library for OpenERP developpers",
     "version": "0.2",
     "author": "UIDE/WE2BS",
     "category": "Developpement/Library",
     "website": "https://github.com/WE2BS/openerp-openlib",
     "description":
     """
-    An OpenSource Library for OpenERP 6.
+    An OpenSource Library for OpenERP 6 :
+        Download : https://github.com/WE2BS/openerp-openlib
+        Documentation : http://openerp-openlib.readthedocs.org/
+    Requires :
+        Python2.6+
+            httplib2
     """,
     "depends": ["base"],
     "init_xml": [],
