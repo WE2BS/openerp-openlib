@@ -47,7 +47,6 @@ class GithubInstaller(osv.osv_memory, ExtendedOsv):
     def default_token(self, cr, uid, context=None):
         return self.pool.get('openlib.config').get('openlib.config_github_token').value
 
-
     _name = 'openlib.github_installer'
     _inherit = 'res.config'
     
@@ -60,6 +59,5 @@ class GithubInstaller(osv.osv_memory, ExtendedOsv):
         'login' : default_login,
         'token' : default_token,
     }
-
 
 GithubInstaller()
