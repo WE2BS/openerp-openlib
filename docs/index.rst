@@ -16,6 +16,8 @@ API. For example, you don't have to pass the ``cr``, ``uid`` or ``context`` vari
 is not intrusive, you can enable it on your objects if you want, but it's not mandatory at all.
 
 .. toctree ::
+    :maxdepth: 2
+    :numbered:
 
     orm
 
@@ -30,6 +32,8 @@ Of course, this won't report any logical bugs (Like workflow errors, or "nothing
 bug will be reported, without any intervention from the user.
 
 .. toctree ::
+    :maxdepth: 2
+    :numbered:
 
     github
 
@@ -40,6 +44,8 @@ Global configuration
 OpenLib let you define global variables (database-wide) easily.
 
 .. toctree ::
+    :maxdepth: 2
+    :numbered:
 
     config
 
@@ -50,6 +56,8 @@ Misc tools
 Others tools provided by OpenLib.
 
 .. toctree ::
+    :maxdepth: 2
+    :numbered:
 
     tools
 
