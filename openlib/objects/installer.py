@@ -36,10 +36,8 @@ class GithubInstaller(osv.osv_memory, ExtendedOsv):
         pconfig = self.pool.get('openlib.config')
 
         if data.login and data.token:
-            login_config = pconfig.get('openlib.config_github_user')
-            token_config = pconfig.get('openlib.config_github_token')
-            pconfig.write(cr, uid, login_config.id, {'value' : data.login}, context=context)
-            pconfig.write(cr, uid, token_config.id, {'value' : data.token}, context=context)
+            pconfig.set_value('openlib.github', 'GITHUB_USER', data.login)
+            pconfig.set_value('openlib.github', 'GITHUB_TOKEN', data.token)
 
     def default_login(self, cr, uid, context=None):
         return self.pool.get('openlib.config').get_value('openlib.github', 'GITHUB_USER')

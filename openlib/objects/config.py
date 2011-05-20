@@ -48,7 +48,12 @@ class Config(osv.osv, ExtendedOsv):
         """
 
         cr, uid, context = self._get_cr_uid_context()
+        config_id = self.find(module=module, key=key)
 
+        if config_id:
+            self.write(cr, uid, config_id, {'value' : value}, context=context)
+        else:
+            self.create(cr, uid, {'module' : module, 'key' : key, 'value' : value})
 
     _name = 'openlib.config'
     _columns = {
