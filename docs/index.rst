@@ -19,15 +19,39 @@ is not intrusive, you can enable it on your objects if you want, but it's not ma
 
     orm
 
+----------------------------
+Github automatic bug reports
+----------------------------
+
+OpenLib integrates very well with GitHub and supports automatic bug reporting. This means that each time an exception
+is raised in your code, OpenLib will check your github project and reports the bug it hasn't been reported.
+
+Of course, this won't report any logical bugs (Like workflow errors, or "nothing happens" bugs), but code-related
+bug will be reported, without any intervention from the user.
+
+.. toctree ::
+
+    github
+
 --------------------
 Global configuration
 --------------------
 
-
+OpenLib let you define global variables (database-wide) easily.
 
 .. toctree ::
 
     config
+
+----------
+Misc tools
+----------
+
+Others tools provided by OpenLib.
+
+.. toctree ::
+
+    tools
 
 ------------------
 Indices and tables

@@ -128,6 +128,22 @@ Returns the first partner whose name is 'Agrolait': ::
 
     partner = self.get(name='Agrolait', _object='res.partner')
 
+get_pools
+~~~~~~~~~
+
+.. method :: ExtendedOsv.get_pools(*args)
+
+    An equivalent of ``sel.pool.get`` which supports more than one argument.
+
+    :returns: A list of pool objects for each pool name passed as argument.
+
+**Example**
+
+::
+
+    partner_pool, config_pool = self.get_pools('res.partner', 'openlib.config')
+
+
 xmlid_to_id
 ~~~~~~~~~~~
 

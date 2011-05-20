@@ -74,6 +74,6 @@ Using write (normal way): ::
 Using this method implies that you already know the ID of the global variable object. If it does not exists,
 you have to create it with the :meth:`create` method. To make your life simpler, OpenLib provides a ``set_value`` method: ::
 
-    self.pool.get('openlib.config').set_value('openlib.github', 'GITHUB_USER', 'XXXXX)
+    self.pool.get('openlib.config').set_value('openlib.github', 'GITHUB_USER', 'XXXXX')
 
 This method will create the entry if it doesn't exist, and update it if it does.
