@@ -35,7 +35,7 @@
     "depends": ["base"],
     "init_xml": [],
     "demo_xml": [],
-    "update_xml": ['views/config.xml', 'views/menu.xml', 'views/data.xml'],
+    "update_xml": ['views/config.xml', 'views/menu.xml', 'views/data.xml', 'views/installer.xml'],
     "active": False,
     "test": [],
     "installable": True,

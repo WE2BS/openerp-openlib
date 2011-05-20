@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <!-- View -->
+        <record id="github_installer_form_view" model="ir.ui.view">
+            <field name="name">openlib.github.installer.form.view</field>
+            <field name="model">openlib.github_installer</field>
+            <field name="type">form</field>
+            <field name="inherit_id" ref="base.res_config_view_base"/>
+            <field name="arch" type="xml">
+                <label string="description" position="attributes">
+                    <attribute name="string">Modules that uses OpenLib can enable automatic bug reporting on github. If you want to enable this feature, set your github login and token here.</attribute>
+                </label>
+                <separator string="vsep" position="attributes">
+                    <attribute name="string"></attribute>
+                </separator>
+                <separator string="title" position="attributes">
+                    <attribute name="string">Github Account Configuration</attribute>
+                </separator>
+                <group string="res_config_contents" position="replace">
+                    <group colspan="4" col="2">
+                        <field name="login" colspan="4"/>
+                        <field name="token" colspan="4"/>
+                    </group>
+                    <separator string="Help" colspan="4"/>
+                    <label string="You can find your token on your github account page, go to 'Account Settings->Account Admin->API Token'. This account will be used on the whole database, no matter the user who find a bug." colspan="4"/>
+                </group>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="github_installer_action" model="ir.actions.act_window">
+            <field name="name">OpenLib: Github configuration</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">openlib.github_installer</field>
+            <field name="view_type">form</field>
+            <field name="view_id" ref="github_installer_form_view"/>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+        <record id="github_installer_step" model="ir.actions.todo">
+            <field name="action_id" ref="github_installer_action"/>
+        </record>
+    </data>
+</openerp>
