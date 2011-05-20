@@ -5,7 +5,7 @@ OpenERP OpenLib
 You can download OpenLib on its github page : http://github.com/WE2BS/openerp-openlib
 
 .. note ::
-    This document refers to version |version|
+    This document refers to version |release|
 
 -------------
 ORM Extension
