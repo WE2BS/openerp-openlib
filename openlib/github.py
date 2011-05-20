@@ -134,8 +134,8 @@ def report_bugs(func):
             pool = pooler.get_pool(cr.dbname)
             pool_config = pool.get('openlib.config')
 
-            user = pool_config.get(module='openlib.github', key__iexact='GITHUB_USER')
-            token = pool_config.get(module='openlib.github', key__iexact='GITHUB_TOKEN')
+            user = pool_config.get_value('openlib.github', 'GITHUB_USER')
+            token = pool_config.get_value('openlib.github', 'GITHUB_TOKEN')
 
             if not user or not token:
                 _logger.warning('Unable to report bug: You must configure a github username/token.')
@@ -144,10 +144,10 @@ def report_bugs(func):
 
             # Reports the bug
             resp, content = h.request(CREATE_ISSUE_URL % (repo_user, repo_name), method='POST', body=urllib.urlencode({
-                'title':issue_title,
-                'body':issue_message,
-                'login' : user.value,
-                'token' : token.value,
+                'title': issue_title,
+                'body': issue_message,
+                'login' : user,
+                'token' : token,
             }))
 
             if resp.status != 201:

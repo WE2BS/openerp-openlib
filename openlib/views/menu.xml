@@ -8,7 +8,6 @@
             <field name="view_mode">tree,form</field>
             <field name="usage">menu</field>
         </record>
-
         <menuitem id="menu_global_variables" name="Variables" sequence="100" groups="base.group_system"
             parent="base.menu_custom" action="openlib_config_action"/>
     </data>

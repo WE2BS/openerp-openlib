@@ -22,13 +22,33 @@ from __future__ import unicode_literals
 from osv import osv, fields
 from .. orm import ExtendedOsv
 
-import pickle
-
 class Config(osv.osv, ExtendedOsv):
 
     """
     This class simply defines a table in which you can store database-wide data. The data is automatically pickled.
     """
+
+    def get_value(self, module, key):
+
+        """
+        Returns None if the key is not defined.
+        """
+
+        try:
+            value = self.get(module=module, key=key).value
+        except AttributeError:
+            value = None
+
+        return value
+
+    def set_value(self, module, key, value):
+
+        """
+        Sets the value of a key.
+        """
+
+        cr, uid, context = self._get_cr_uid_context()
+
 
     _name = 'openlib.config'
     _columns = {
@@ -37,5 +57,9 @@ class Config(osv.osv, ExtendedOsv):
         'value' : fields.char('Value', size=255),
         'help' : fields.char('Help', size=255, readonly=True),
     }
+
+    _sql_constraints = [
+        ('uniq_module_key', 'UNIQUE(module,key)', 'Module and key must be unique together.'),
+    ]
 
 Config()

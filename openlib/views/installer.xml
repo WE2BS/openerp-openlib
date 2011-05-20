@@ -24,6 +24,7 @@
                     </group>
                     <separator string="Help" colspan="4"/>
                     <label string="You can find your token on your github account page, go to 'Account Settings->Account Admin->API Token'. This account will be used on the whole database, no matter the user who find a bug." colspan="4"/>
+                    <field name="url" widget="url" colspan="4" nolabel="1"/>
                 </group>
             </field>
         </record>

@@ -42,10 +42,10 @@ class GithubInstaller(osv.osv_memory, ExtendedOsv):
             pconfig.write(cr, uid, token_config.id, {'value' : data.token}, context=context)
 
     def default_login(self, cr, uid, context=None):
-        return self.pool.get('openlib.config').get('openlib.config_github_user').value
+        return self.pool.get('openlib.config').get_value('openlib.github', 'GITHUB_USER')
 
     def default_token(self, cr, uid, context=None):
-        return self.pool.get('openlib.config').get('openlib.config_github_token').value
+        return self.pool.get('openlib.config').get_value('openlib.github', 'GITHUB_TOKEN')
 
     _name = 'openlib.github_installer'
     _inherit = 'res.config'
@@ -53,11 +53,13 @@ class GithubInstaller(osv.osv_memory, ExtendedOsv):
     _columns = {
         'login' : fields.char('Github Login', size=255),
         'token' : fields.char('Github Token', size=255),
+        'url' : fields.char('Github URL', size=255, readonly=1),
     }
 
     _defaults = {
         'login' : default_login,
         'token' : default_token,
+        'url' : 'http://github.com',
     }
 
 GithubInstaller()

@@ -115,7 +115,7 @@ msgstr "Aide"
 #. module: openlib
 #: view:openlib.github_installer:0
 msgid "You can find your token on your github account page, go to 'Account Settings->Account Admin->API Token'. This account will be used on the whole database, no matter the user who find a bug."
-msgstr "Vous trouverez votre token github dans votre profile github, allez dans 'Account Settings->Account Admin->API Token'. Ce compte sera utilisé pour toute la base de donnée, peut importe quel utilisateur déclenche le bug."
+msgstr "Vous trouverez votre token github dans votre profil github, allez dans 'Account Settings->Account Admin->API Token'. Ce compte sera utilisé pour toute la base de donnée, peut importe quel utilisateur déclenche le bug."
 
 #. module: openlib
 #: field:openlib.github_installer,config_logo:0

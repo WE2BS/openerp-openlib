@@ -1,23 +1,28 @@
+============================
 OpenLib Global Configuration
 ============================
 
-OpenLib provides an easy way to store database configuration values, not related to any object. It's just a simple
-table with key->value pairs. You can associate each key to a module.
+Sometimes, you need to store data not attached to a specific object, a kind of *Global variable*. OpenLib let you
+do this with ``openlib.config`` object. This is a simple table with 3 columns, ``module``, ``key`` and ``value``.
 
-Read global configuration variables
------------------------------------
+This object implements the :class:`ExtendedOsv` interface, so it can be manipulated easily. Data are stored as charfield
+and have maximum size of 255 characters. You can store pickled object, if you want.
 
-The *openlib.config* object inherits of :class:`openlib.orm.ExtendedOsv` so you can directly use the django-like
-syntax to make search. Here is an example : ::
+------------------------
+Access a global variable
+------------------------
 
-    variables = self.pool.get('openlib.config').filter(module='mymodule', key__startswith='MYMOD_')
+OpenLib uses this object internally to store Github credentials, for example, if you want to get the github login: ::
 
-    for key, value in [(config.key, config.value) for config in variables]:
-        print key, value
+    login = self.pool.get('openlib.config').get(module='openlib.github', key='GITHUB_USER').value
 
-Of course, you can use the :meth:`get` method to retrieve an element : ::
+This is the *normal* way, but ``openlib.config`` provides a method which returns ``None`` if the key is not defined: ::
 
-    value = self.pool.get('openlib.config').get(module='mymodule', key='MYMOD_KEY').value
+    login = self.pool.get('openlib.config').get_value('openlib.github', 'GITHUB_USER')
+
+.. note ::
+
+    The second way it the safest, because it won't raise an ``AtributeError`` if the key is not defined.
 
 Set global configuration variables
 ----------------------------------
