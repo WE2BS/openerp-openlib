@@ -317,7 +317,7 @@ class ExtendedOsv(object):
                 iter(value)
             except TypeError:
                 # If we can't iterate on the value, it's not considered as a list of ids
-                if isinstance(value, Q):
+                if not isinstance(value, Q):
                     raise RuntimeError('You must use filter() on Q objects or ids.')
                 q = value
             else:
@@ -341,7 +341,7 @@ class ExtendedOsv(object):
         pool = self._get_pool(_object)
         cr, uid, context = self._get_cr_uid_context()
 
-        if isinstance(value, int):
+        if isinstance(value, (int, long)):
             return pool.browse(cr, uid, value, context=context)
 
         if isinstance(value, basestring):
