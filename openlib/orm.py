@@ -199,7 +199,7 @@ class ExtendedOsv(object):
         - The filter() method, a search-and-browse which supports Q objects.
         - The get() method, a search-and-browse which returns only one object. Supports XMLID search.
         - The xmlid_to_id method()
-        - The pools() method.
+        - The get_pools() method.
     """
 
     def _get_cr_uid_context(self):
@@ -364,6 +364,6 @@ class ExtendedOsv(object):
         Returns a list of objects corresponding to the OpenERP passed as argument.     
         """
 
-        if len(args) > 1:
+        if args:
             return map(self.pool.get, args)
         return self.pool.get(args[0])
